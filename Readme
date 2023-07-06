@@ -1,0 +1,38 @@
+details>
+
+npm init  
+npm install express
+npm i -D nodemon 
+  "start": "node server.js",
+    "dev": "nodemon server.js"
+npm install dotenv  
+npm run dev
+npm i express-async-handler
+npm i express mongoose
+npm i bcrypt
+npm i jsonwebtoken
+ [https://binged.it/3mAk7Jw]
+
+ //for full stack use handlebars
+ //npm i mysql2
+
+ -cors
+ -helmet
+ -margin
+ -compression
+
+[
+   In both case we can reset our cluster password and solve this issue.
+
+To Solve The Issue Follow Below Given Steps
+
+Step 1:- Click Database Access From left Side Navigation of MongoDB Atlas page.
+
+Step 2:- Select your username and and click on the edit button from right side.
+
+Step 3:- Click to change password.
+
+Step 4:- Click update user
+
+]
+</details>
