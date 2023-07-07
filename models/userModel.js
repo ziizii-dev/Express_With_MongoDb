@@ -14,7 +14,19 @@ password:{
     type:String,
     required:[true,"Please add the user password"],
 
-}
+},
+photo:{
+    type:String,
+    default:null
+},
+authToken:{
+    type:String,
+    default:null
+},
+delete_status: {
+    type: Number,
+    default: 1
+  }
 },{
     timestamps:true,versionKey:false
 

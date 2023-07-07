@@ -1,9 +1,57 @@
+const mongoose =require("mongoose");
 const asyncHandler = require("express-async-handler");
 const Book = require("../models/bookModle");
-//const ObjectId = req
 
-//@desc Create All contact
-//@route Post /api/contacts
+//@desc Create All Books
+//@route Get /api/book/lists
+const getBooks =asyncHandler (async (req,res)=>{
+    const perPage = parseInt(req.query.perPage) || 10; 
+    const currentPage = parseInt(req.query.page) || 1; 
+    try {
+    const totalCount = await Book.countDocuments({delete_status:1});
+    const totalPages = Math.ceil(totalCount / perPage);
+    const book =await Book.aggregate([
+        {
+            $lookup: {
+              from: 'authors',
+              localField: 'authorId',
+              foreignField: '_id',
+              as: 'authorData'
+            }
+          },
+            
+        {
+          $project: {
+            _id: 1,
+            title:1,
+            releaseYear:1,
+            authorId: 1,
+            authorName: { $arrayElemAt: ['$authorData.name', 0] }
+           
+          }
+        }
+      ])
+    .skip((currentPage - 1) * perPage)
+    .limit(perPage);
+   
+    res.status(200).json({
+        error:false,
+        message:"Book Lists",
+        data:book,
+        totalCount,
+        currentPage,
+        totalPages,  
+        }); 
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+    }
+   })//End method
+
+
+//@desc Create All Books
+//@route Post /api/book/create
 //Accept private
 const createBook = asyncHandler( async (req,res)=>{
     //res.send("hello");
@@ -25,95 +73,111 @@ const createBook = asyncHandler( async (req,res)=>{
         }); 
    
    })
-//@desc Get All contact
-//@route Get /api/contacts
-//Accept private
-const getContacts =asyncHandler (async (req,res)=>{
-    const contacts =await Contact.find({user_id: req.user.id});
-    res.status(200).json({
-        error:false,
-        message:"contact detail",
-        data:contacts
-        }); 
-   
-   })
 
-//@desc Get Detail All contact
-//@route Get /api/contacts/id
+
+//@desc Get Detail All book
+//@route Get /api/book/detail/id
 //Accept private
-const getContactDetail =asyncHandler (async (req,res)=>{
-    const contact = await Contact.findById(req.params.id);
-    if(!contact){
-        res.status(404);
-        throw new Error("Contact not found!")
-    }
-    res.status(200).json({
+const getBookDetail =asyncHandler (async (req,res)=>{
+    const bookId = req.params.id;
+    // console.log(bookId);
+    // return;
+    try {
+      const bookDetails = await Book.aggregate([
+        {
+          $match: {
+            _id:new mongoose.Types.ObjectId(bookId)
+          }
+        },
+        {
+          $lookup: {
+            from: 'authors',
+            localField: 'authorId',
+            foreignField: '_id',
+            as: 'author'
+          }
+        },
+        {
+          $unwind: '$author'
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            releaseYear:1,
+            author: {
+              _id: 1,
+              name: 1
+             
+            }
+          
+          }
+        }
+      ]);
+  
+      if (!bookDetails || bookDetails.length === 0) {
+        return res.status(404).json({ message: 'Book not found' });
+      }
+  
+    //   return res.json(bookDetails[0]);
+      res.status(200).json({
         error:false,
-        message:"contact detail",
-        data:contact
+        message:"Book detail",
+        data:bookDetails
         }); 
-   
-   })
-   //@desc Get  All contacts
-//@route Get /api/contacts
-//Accept private
-const Contacts =asyncHandler (async (req,res)=>{
-    res.status(200).json({
-        error:false,
-        message:"contact list",
-        data:Contacts
-    }); 
-   
-   })
-     //@desc Update All contact
-//@route Put /api/contacts
-//Accept private
-const updateContact = asyncHandler(async(req,res)=>{
-    const contact = await Contact.findById(req.params.id);
-    if(!contact){
-        res.status(404);
-        throw new Error("Contact not found");
+    } catch (err) {
+      console.error('Failed to retrieve book details:', err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-    if(contact.user_id.toString() !== req.user.id){
-        res.status(403);
-        throw new Error("User don't have permission to update other user contacts");
-    } 
-    const updatedContact =await Contact.findByIdAndUpdate(
+   
+   })// End Method
+   
+ //@desc Update All Book
+//@route Put /api/book/update/id
+//Accept private
+const updateBook = asyncHandler(async(req,res)=>{
+    const book = await Book.findById(req.params.id);
+    // console.log(book);
+    // return;
+    if(!book){
+        res.status(404);
+        throw new Error("Book not found");
+    }
+    // if(book.authorId.toString() !== req.authorId){
+    //     res.status(403);
+    //     throw new Error("Book don't have permission to update!");
+    // } 
+    const updatedBook =await Book.findByIdAndUpdate(
         req.params.id,
         req.body,
         {new:true}
     );
     res.status(200).json({
         error:false,
-        message:"contact updated success",
-        data:updatedContact
+        message:"Book updated success",
+        data:updatedBook
     }); 
    
    })
-     //@desc Delete All contact
-//@route Delete /api/contacts
+//@desc Delete All Book
+//@route Delete /api/book/delete/id
 //Accept private
-const deleteContact = asyncHandler(async(req,res)=>{
-    const contact = await Contact.findById({_id:req.params.id});
-    //console.log(contact);
-    //return;
-    if(!contact){
+
+const deleteBook = asyncHandler(async(req,res)=>{
+    const book = await Book.findById({_id:req.params.id});
+    // console.log(book);
+    // return;
+    if(!book){
         res.status(404);
-        throw new Error("Contact not found");
-    };
-    if(contact.user_id.toString() !== req.user.id){
-        res.status(403);
-        throw new Error("User don't have permission to delete other user contacts");
-
-    } 
-   //contact.remove();
-  await Contact.deleteOne({_id: req.params.id});
-
+        throw new Error("Book not found");
+    }; 
+   //user.remove();
+   const data = await Book.findByIdAndUpdate(req.params.id,{delete_status:0})
     res.status(200).json({
         error:false,
-        message:"contact delete success",
-        data:contact
+        message:"User delete success",
+        data:data
     }); 
    
-   })
-  module.exports ={createBook };
+   })//End Metho
+  module.exports ={createBook ,getBookDetail,updateBook,deleteBook,getBooks};

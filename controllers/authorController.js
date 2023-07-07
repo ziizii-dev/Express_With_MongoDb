@@ -2,12 +2,13 @@ const asyncHandler = require("express-async-handler");
 const Author = require("../models/authorModel");
 //const ObjectId = req
 
-//@desc Create All contact
-//@route Post /api/contacts
+
+//@route Post /api/author/create
 //Accept private
 const createAuthor = asyncHandler( async (req,res)=>{
     //res.send("hello");
     //console.log("The request body is :", req.body);
+   
     const {name} =req.body;
     if(!name) {
         res.status(400);
@@ -22,96 +23,121 @@ const createAuthor = asyncHandler( async (req,res)=>{
         data:author
         }); 
    
-   })
-//@desc Get All contact
-//@route Get /api/contacts
-//Accept private
-const getContacts =asyncHandler (async (req,res)=>{
-    const contacts =await Contact.find({user_id: req.user.id});
-    res.status(200).json({
-        error:false,
-        message:"contact detail",
-        data:contacts
-        }); 
-   
-   })
+   })//End Method
 
-//@desc Get Detail All contact
-//@route Get /api/contacts/id
+//@route Get /api/author/lists
 //Accept private
-const getContactDetail =asyncHandler (async (req,res)=>{
-    const contact = await Contact.findById(req.params.id);
-    if(!contact){
+const getAuthorList =asyncHandler (async (req,res)=>{
+    const perPage = parseInt(req.query.perPage) || 10; 
+    const currentPage = parseInt(req.query.page) || 1; 
+    // const searchKey = req.params.name; // Search key
+//  Author.find({name:req.params.name},(error,result)=>{
+//         if(error){
+//             console.log(error)
+//         }else{
+//             console.log(result);
+//             return;
+//         }
+//     })
+  
+    try {
+        // const findByName = function(authorName, done) {
+        //     Author.find({"name":authorName},(err,data)=>{
+        //     if(err) return done(err)
+        //       return done(null,data)
+        //       })  
+            
+        //     };
+        // const query = {name:req.params.name};
+
+        // if (searchKey) {
+        //   query.key = { $regex: searchKey};
+        // }
+
+    const totalCount = await Author.countDocuments({delete_status:1});
+    const totalPages = Math.ceil(totalCount / perPage);
+    const author =await Author.find({ delete_status: 1 })
+    .skip((currentPage - 1) * perPage)
+    .limit(perPage);
+   
+    res.status(200).json({
+        error:false,
+        message:"Author Lists",
+        data:author,
+        totalCount,
+        currentPage,
+        totalPages,  
+        }); 
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+    }
+   
+   
+   })//End method
+
+
+//@route Get /api/author/id
+//Accept private
+const getAuthorDetail =asyncHandler (async (req,res)=>{
+    const author = await Author.findById(req.params.id);
+    if(!author){
         res.status(404);
-        throw new Error("Contact not found!")
+        throw new Error("Author not found!")
     }
     res.status(200).json({
         error:false,
-        message:"contact detail",
-        data:contact
+        message:"Author detail",
+        data:author
         }); 
    
    })
-   //@desc Get  All contacts
-//@route Get /api/contacts
+ 
+  
+//@route Put /api/author/update
 //Accept private
-const Contacts =asyncHandler (async (req,res)=>{
-    res.status(200).json({
-        error:false,
-        message:"contact list",
-        data:Contacts
-    }); 
-   
-   })
-     //@desc Update All contact
-//@route Put /api/contacts
-//Accept private
-const updateContact = asyncHandler(async(req,res)=>{
-    const contact = await Contact.findById(req.params.id);
-    if(!contact){
+const updateAuthor = asyncHandler(async(req,res)=>{
+    const author = await Author.findById(req.params.id);
+    // console.log(author);
+    if(!author){
         res.status(404);
-        throw new Error("Contact not found");
+        throw new Error("Author not found");
     }
-    if(contact.user_id.toString() !== req.user.id){
-        res.status(403);
-        throw new Error("User don't have permission to update other user contacts");
-    } 
-    const updatedContact =await Contact.findByIdAndUpdate(
+   
+    const updatedAuthor=await Author.findByIdAndUpdate(
         req.params.id,
         req.body,
         {new:true}
     );
     res.status(200).json({
         error:false,
-        message:"contact updated success",
-        data:updatedContact
+        message:"Author updated success",
+        data:updatedAuthor
     }); 
    
    })
      //@desc Delete All contact
 //@route Delete /api/contacts
 //Accept private
-const deleteContact = asyncHandler(async(req,res)=>{
-    const contact = await Contact.findById({_id:req.params.id});
-    //console.log(contact);
-    //return;
-    if(!contact){
+const deleteAuthor = asyncHandler(async(req,res)=>{
+    const author = await Author.findById(req.params.id);
+    if(!author){
         res.status(404);
-        throw new Error("Contact not found");
+        throw new Error("Author not found");
     };
-    if(contact.user_id.toString() !== req.user.id){
-        res.status(403);
-        throw new Error("User don't have permission to delete other user contacts");
-
-    } 
    //contact.remove();
-  await Contact.deleteOne({_id: req.params.id});
+//   await Author.deleteOne({_id: req.params.id});
+   const data = await Author.findByIdAndUpdate(req.params.id,{delete_status:0})
 
     res.status(200).json({
         error:false,
-        message:"contact delete success",
-        data:contact
+        message:"Author delete success",
+        data:data
     }); 
    
-   })
-  module.exports ={createAuthor };
+   })//End method
+
+   
+   
+  module.exports ={createAuthor,getAuthorList,getAuthorDetail,updateAuthor,deleteAuthor};

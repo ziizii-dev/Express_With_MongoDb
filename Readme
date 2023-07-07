@@ -11,6 +11,9 @@ npm i express-async-handler
 npm i express mongoose
 npm i bcrypt
 npm i jsonwebtoken
+
+(This project run with => npm run dev)
+
  [https://binged.it/3mAk7Jw]
 
  //for full stack use handlebars

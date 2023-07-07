@@ -1,102 +1,89 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
+// const mongoose = require('mongoose');
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-//@desc Register user
-//@route Post /api/users/register
-//Accept public
-const registerUser =asyncHandler (async (req,res)=>{
-   const {username,email,password} =req.body;
-   if(!username || !email || !password){
-    res.status(400);
-    throw new Error("All fields are mandatory!")
-   }
-   const userAvaliable = await User.findOne({email});
-   if(userAvaliable){
-    res.status(400)
-    throw new Error("User already registered!")
-   }
-   //Hash password section
-   const hashedPassword = await bcrypt.hash(password,10);
-   console.log("Hashed Password:",hashedPassword);
-   const user = await User.create({
-    username,
-    email,
-    password:hashedPassword
-   });
-   console.log(`User Created ${user}`);
-   if(user){
-    res.status(201).json({
-        error:false,
-        message:"Registration success",
-        _id:user.id,
-        // data:user,
-        email:user.email,    
-    })
-   }else{
-    res.status(400);
-    throw new Error("User data is invalid!")
-   }
-    res.status(200).json({
-        error:false,
-        message:"Registration success",
-        data:user
-       
-        }); 
-   });
-   //@desc Login user
-//@route Post /api/users/login
-//Accept public
-const loginUser =asyncHandler (async (req,res)=>{
-    return
-   const {email,password}=req.body;
-   if(!email || !password){
-    res.status(400);
-    throw new Error("All fields are mandatory!");
+//const ObjectId = req
 
-   };
-   const user = await User.findOne({email});
-   //compare passward with hasedpassword
-   if(user && (await bcrypt.compare(password, user.password))){
-    const accessToken = jwt.sign({
-        user:{
-            username:user.username,
-            email:user.email,
-            id: user.id
-        }
-    },process.env.ACCESS_TOKEN_SECRET, {expiresIn : "24h"});
-    res.status(200).json({
-        accessToken,
-        data:user
-    });
-   }else{
-    res.status(401);
-    throw new Error("email or password is invalid");
-   }
-    // res.status(200).json({
-    //     error:false,
-    //     message:"Login success",
-       
-    //     }); 
-   });
-//@desc Current user
-//@route Post /api/users/current
+
+  
+//@desc Update All user
+//@route Put /api/user/update/id
+//@need Bare Token
 //Accept private
-const currentUser =asyncHandler (async (req,res)=>{ 
-    res.status(200).json({
-        error:false,
-        message:"Current user info",
-        user:req.user 
-        }); 
-   });
-   //Get All User Lists
-   const getUsers =asyncHandler (async (req,res)=>{
-    const users =await User.find();
-    res.status(200).json({
-        error:false,
-        message:"contact detail",
-        data:users
-        }); 
+const updateUserInfo = asyncHandler(async(req,res)=>{
    
-   })
-   module.exports = {registerUser,getUsers,loginUser,currentUser};
+//  const id = req.params.id;
+
+   const user = await User.findById(req.params.id);
+    if(!user){
+        res.status(404);
+        throw new Error("User not found");
+    }
+    const updatedUserInfo =await User.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {new:true}
+    );
+    res.status(200).json({
+        error:false,
+        message:"User updated success",
+        data:updatedUserInfo
+    }); 
+   
+   })//End Method
+
+//@desc Delete All Author
+//@route Delete /api/author/delete/id
+//Accept private
+const deleteUser = asyncHandler(async(req,res)=>{
+    const user = await User.findById({_id:req.params.id});
+    //console.log(contact);
+    //return;
+    if(!user){
+        res.status(404);
+        throw new Error("User not found");
+    }; 
+   //user.remove();
+   const data = await User.findByIdAndUpdate(req.params.id,{delete_status:0})
+    res.status(200).json({
+        error:false,
+        message:"User delete success",
+        data:data
+    }); 
+   
+   })//End Method
+
+   //Password Change Section
+   //@route Put /api/user/password/change/
+   const userPasswordChange = asyncHandler(async(req,res)=>{
+    const {authToken, currentPassword, newPassword, confirmPassword } = req.body;
+    try {
+        const user = await User.findOne({authToken});
+        // console.log(user);
+        // return;
+
+        if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+       
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          return res.status(401).json({ message: 'Incorrect current password' });
+        }
+        if (newPassword !== confirmPassword) {
+          return res.status(400).json({ message: 'New password and confirm password do not match' });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        user.password = hashedPassword;
+        await user.save();
+    
+        return res.json({ message: 'Password changed successfully' });
+      } catch (err) {
+        console.error('Failed to change password:', err);
+        return res.status(500).json({ message: 'Internal server error' });
+      }
+   
+   })//End Method
+  module.exports ={updateUserInfo,deleteUser,userPasswordChange};

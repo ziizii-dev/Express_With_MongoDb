@@ -5,6 +5,10 @@ name:{
     type:String,
     required:[true,"Please add the name"],
 },
+delete_status: {
+    type: Number,
+    default: 1
+  }
 
 
 },{

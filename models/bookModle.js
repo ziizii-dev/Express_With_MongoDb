@@ -12,8 +12,13 @@ releaseYear:{
 authorId:{
     type: mongoose.Schema.Types.ObjectId,
     required:[true,"Please enter"],
+    ref: 'Author'
   
 },
+delete_status: {
+    type: Number,
+    default: 1
+  }
 },{
     timestamps:true,versionKey:false
 
