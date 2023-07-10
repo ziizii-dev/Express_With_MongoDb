@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
 //@desc Register user
 //@route Post /api/users/register
 //Accept public
@@ -18,31 +19,32 @@ const registerUser =asyncHandler (async (req,res)=>{
    }
    //Hash password section
    const hashedPassword = await bcrypt.hash(password,10);
-   console.log("Hashed Password:",hashedPassword);
+//    console.log("Hashed Password:",hashedPassword);
    const user = await User.create({
     username,
     email,
     password:hashedPassword
    });
-   console.log(`User Created ${user}`);
+//    console.log(`User Created ${user}`);
    if(user){
-    res.status(201).json({
-        error:false,
-        message:"Registration success",
-        _id:user.id,
-        // data:user,
-        email:user.email,    
-    })
-   }else{
-    res.status(400);
-    throw new Error("User data is invalid!")
-   }
+
     res.status(200).json({
         error:false,
         message:"Registration success",
         data:user
        
         }); 
+    // res.status(201).json({
+    //     error:false,
+    //     message:"Registration success",
+    //     _id:user.id,
+    //     email:user.email,    
+    // })
+   }else{
+    res.status(400);
+    throw new Error("User data is invalid!")
+   }
+   
    });
    //@desc Login user
 //@route Post /api/users/login
@@ -86,11 +88,15 @@ const loginUser =asyncHandler (async (req,res)=>{
 //@route Post /api/users/current
 //Accept private
 const currentUser =asyncHandler (async (req,res)=>{ 
+   try {
     res.status(200).json({
         error:false,
         message:"Current user info",
         user:req.user 
         }); 
+   } catch (err) {
+    console.error(' AuthToken Required:', err);
+   }
    });//End method
 
 

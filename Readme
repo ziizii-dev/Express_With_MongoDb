@@ -19,6 +19,7 @@ npm i jsonwebtoken
  //for full stack use handlebars
  //npm i mysql2
 
+## this project run with npm run dev
  -cors
  -helmet
  -margin

@@ -2,6 +2,8 @@ const mongoose =require("mongoose");
 const asyncHandler = require("express-async-handler");
 const Book = require("../models/bookModle");
 
+// Book:get();
+// Book.find();
 //@desc Create All Books
 //@route Get /api/book/lists
 const getBooks =asyncHandler (async (req,res)=>{
@@ -11,7 +13,13 @@ const getBooks =asyncHandler (async (req,res)=>{
     const totalCount = await Book.countDocuments({delete_status:1});
     const totalPages = Math.ceil(totalCount / perPage);
     const book =await Book.aggregate([
+      {
+        $match: {
+          delete_status: 1
+        }
+      },
         {
+          
             $lookup: {
               from: 'authors',
               localField: 'authorId',
@@ -25,6 +33,7 @@ const getBooks =asyncHandler (async (req,res)=>{
             _id: 1,
             title:1,
             releaseYear:1,
+            delete_status:1,
             authorId: 1,
             authorName: { $arrayElemAt: ['$authorData.name', 0] }
            
